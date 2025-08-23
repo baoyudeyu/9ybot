@@ -1,0 +1,25 @@
+database:
+  host: "gz-cynosdbmysql-grp-jj6na063.sql.tencentcdb.com"
+  port: 21151
+  username: "y9"
+  database: "y9"
+  password: "04By0302"
+  max_open_conns: 20
+  max_idle_conns: 10
+  conn_max_lifetime: "1h"
+  
+telegram:
+  token: "7659022985:AAE9hkURg0uOfBZPfa6S2AIsdIxazuMEa_Y"
+  timeout: "30s"
+  
+api:
+  url: "https://pc28.help/kj.json"
+  timeout: "10s"
+  retry_count: 3
+  retry_delay: "2s"
+  
+app:
+  polling_interval: "1s"
+  data_retention_hours: 24
+  log_level: "error"
+  cache_ttl: "30m"
