@@ -122,39 +122,54 @@ func (b *Bot) formatPredictionHistoryMessage(predictions []database.Prediction) 
 		displayCount = 11
 	}
 
-	// 从最老的开始显示到最新的（反转顺序）
-	for i := displayCount - 1; i >= 0; i-- {
-		pred := predictions[i]
+	// 分离已开奖和待开奖的记录
+	var verifiedPredictions []database.Prediction
+	var pendingPredictions []database.Prediction
 
-		// 显示格式按照用户模板：Round 3326098 Even丨Result：4+3+0=7 Wrong❌
+	for _, pred := range predictions {
 		if pred.ActualOddEven != nil && pred.IsCorrect != nil {
-			// 已开奖的期号
-			result := "Correct✅"
-			if !*pred.IsCorrect {
-				result = "Wrong❌"
-			}
-			// 翻译预测的单双
-			predictedOddEvenEN := b.translateOddEven(pred.PredictedOddEven)
-			builder.WriteString(fmt.Sprintf("Round %s %s丨Result：%s=%d %s\n",
-				pred.TargetQihao, predictedOddEvenEN, *pred.ActualNum, *pred.ActualSum, result))
+			verifiedPredictions = append(verifiedPredictions, pred)
 		} else {
-			// 待开奖的期号（最新预测）
-			predictedOddEvenEN := b.translateOddEven(pred.PredictedOddEven)
-			builder.WriteString(fmt.Sprintf("Round %s %s丨Pending\n",
-				pred.TargetQihao, predictedOddEvenEN))
+			pendingPredictions = append(pendingPredictions, pred)
 		}
 	}
 
-	// 计算准确率
+	// 限制已验证记录的显示数量（为Pending记录留出空间）
+	maxVerified := displayCount - len(pendingPredictions)
+	if maxVerified < 0 {
+		maxVerified = 0
+	}
+	if len(verifiedPredictions) > maxVerified {
+		verifiedPredictions = verifiedPredictions[:maxVerified]
+	}
+
+	// 先显示已开奖的记录（从最老到最新）
+	for i := len(verifiedPredictions) - 1; i >= 0; i-- {
+		pred := verifiedPredictions[i]
+		result := "Correct✅"
+		if !*pred.IsCorrect {
+			result = "Wrong❌"
+		}
+		// 翻译预测的单双
+		predictedOddEvenEN := b.translateOddEven(pred.PredictedOddEven)
+		builder.WriteString(fmt.Sprintf("Round %s %s丨Result：%s=%d %s\n",
+			pred.TargetQihao, predictedOddEvenEN, *pred.ActualNum, *pred.ActualSum, result))
+	}
+
+	// 再显示待开奖的记录（最新的）
+	for i := len(pendingPredictions) - 1; i >= 0; i-- {
+		pred := pendingPredictions[i]
+		predictedOddEvenEN := b.translateOddEven(pred.PredictedOddEven)
+		builder.WriteString(fmt.Sprintf("Round %s %s丨Pending\n",
+			pred.TargetQihao, predictedOddEvenEN))
+	}
+
+	// 计算准确率（只基于已验证的记录）
 	correctCount := 0
-	verifiedCount := 0
-	for i := 0; i < displayCount; i++ {
-		pred := predictions[i]
-		if pred.IsCorrect != nil {
-			verifiedCount++
-			if *pred.IsCorrect {
-				correctCount++
-			}
+	verifiedCount := len(verifiedPredictions)
+	for _, pred := range verifiedPredictions {
+		if pred.IsCorrect != nil && *pred.IsCorrect {
+			correctCount++
 		}
 	}
 

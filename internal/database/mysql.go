@@ -177,7 +177,7 @@ func (m *MySQLDB) GetLatestPredictions(limit int) ([]Prediction, error) {
 			  confidence_score, algorithm_version, predicted_at, verified_at,
 			  created_at, updated_at
 			  FROM predictions 
-			  ORDER BY predicted_at DESC 
+			  ORDER BY CAST(target_qihao AS UNSIGNED) DESC 
 			  LIMIT ?`
 
 	rows, err := m.db.Query(query, limit)
